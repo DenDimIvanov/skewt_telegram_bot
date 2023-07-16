@@ -75,27 +75,6 @@ def query_gsd_sounding_data(lon: float, lat: float, day: datetime.datetime, mode
     return text
 
 
-"https://rucsoundings.noaa.gov/get_soundings.cgi?data_source=GFS&latest=latest&fcst_len=36&airport=55.7%2C37.6&start=latest"
-
-"""
-url = "https://rucsoundings.noaa.gov/get_soundings.cgi?data_source=GFS&airport=55.7%2C37.6&startSecs=1689325200&endSecs=1689328800"
-
-text = ""
-try:
-    response = requests.get(url)
-    if response.status_code != 200:
-        raise Exception('Ошибка при выполнении запроса:', response.status_code)
-    else:
-        text = response.text
-except Exception as e:
-    print(e)
-
-if not text:
-    print("не удалось получить прогноз")
-    exit()
-"""
-
-
 def get_skew_fig(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) -> plt.Figure:
     fig = plt.figure(figsize=(10, 10))
     skew = SkewT(fig)
