@@ -3,14 +3,20 @@ parser for GSD format https://rucsoundings.noaa.gov/raob_format.html
 """
 import pandas as pd
 import numpy as np
+from typing import List
+import datetime
 
 
 def _knots_to_ms(knots: float) -> float:
     return knots * 0.51444444444
 
 
-def parse(text: str) -> pd.DataFrame:
+# return 2 values
+# 1 - pandas Dataframe with sounding data
+# 2 - date forecast of sounding
+def parse(text: str):
     df = None
+    forecast_date = None
 
     if not text:
         return df
@@ -21,9 +27,17 @@ def parse(text: str) -> pd.DataFrame:
     try:
         lines = text.split("\n")
 
-        for line in lines:
-            cols = line.strip().split(" ")
-            linetype = cols[0]
+        for line_number, line in enumerate(lines):
+
+            if line_number == 1:
+                cols = line.strip().split()
+                datetime_str = f"{cols[4]},{cols[3]},{cols[2]},{cols[1]}"
+                datetime_format = "%Y,%b,%d,%H"
+                forecast_date = datetime.datetime.strptime(datetime_str, datetime_format)
+            else:
+                cols = line.strip().split(" ")
+                linetype = cols[0]
+
             if linetype == "9" or linetype == "4":
                 table.append(' '.join(cols[1:]))
 
@@ -37,4 +51,4 @@ def parse(text: str) -> pd.DataFrame:
     except Exception as e:
         print(f'Wrong GSD format, caught {type(e)}: e')
     finally:
-        return df
+        return df, forecast_date
