@@ -6,6 +6,8 @@ from metpy.plots import SkewT
 import numpy as np
 import datetime
 import tools
+import metpy.calc as mpcalc
+from metpy.units import units
 
 _models = ['GFS', 'NAM', 'Op40']
 
@@ -53,12 +55,20 @@ def query_gsd_sounding_data(lon: float, lat: float, day: datetime.datetime, mode
     if not model in _models:
         raise Exception("Unknown model")
 
-    forecast_offset = tools.get_forecast_offset(day)
+    #forecast_offset = tools.get_forecast_offset(day)
+    """
+    'start_year': day.year, 'start_mday': day.day, 'start_month_name': day.strftime('%b'),
+    'start_hour': day.hour, 'start_min': str(0), 'n_hrs': str(1.0),
+    """
 
-    parameters = {'airport': str(lon) + ',' + str(lat), 'data_source': model, 'fcst_len': forecast_offset,
-                  'latest': 'latest', 'start': 'latest'}
+    parameters = {'airport': str(lon) + ',' + str(lat), 'data_source': model, 'fcst_len': 'shortest',
+                  'startSecs': tools.seconds_from_epoc(day.date(), day.hour),
+                  'endSecs': tools.seconds_from_epoc(day.date(), day.hour + 1)}
+
     url = 'https://rucsoundings.noaa.gov/get_soundings.cgi'
-
+    print(day)
+    print(day+datetime.timedelta(hours=1))
+    print(tools.seconds_from_epoc(day))
     text = ""
     try:
         response = requests.get(url, params=parameters)
@@ -74,7 +84,10 @@ def query_gsd_sounding_data(lon: float, lat: float, day: datetime.datetime, mode
         print("не удалось получить прогноз")
     return text
 
-
+"""
+    plot SkewT diagramm. 
+    sounding should have columns: PRES   HGHT  TEMP   DEWPT  WINDDIR     WINDSD
+"""
 def get_skew_fig(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) -> plt.Figure:
     fig = plt.figure(figsize=(10, 10))
     skew = SkewT(fig)
@@ -83,7 +96,7 @@ def get_skew_fig(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) ->
     skew.plot(sounding['PRES'], sounding['DEWPT'], color='tab:green')
 
     skew.ax.set_ylim(1050, 100)
-    skew.ax.set_xlim(-50, 20)
+    skew.ax.set_xlim(-50, 30)
 
     plt.xlabel('T, Grad Celcius')
     plt.ylabel('Pressure, hPa')
@@ -91,8 +104,26 @@ def get_skew_fig(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) ->
 
     sounding['U_WIND'], sounding['V_WIND'] = get_wind_components(sounding['WINDSD'],
                                                                  np.deg2rad(sounding['WINDDIR']))
+    """
+    p = sounding['PRES'].values * units.hPa
+    T = sounding['TEMP'].values * units.degC
+    Td = sounding['DEWPT'].values * units.degC
+    wind_speed = sounding['WINDSD'] * (units.meter/units.second)
+    wind_dir = sounding['WINDDIR'].values * units.degrees
+    u, v = mpcalc.wind_components(wind_speed, wind_dir)
 
-    print(sounding)
+    # Add a secondary axis that automatically converts between pressure and height
+    # assuming a standard atmosphere. The value of -0.12 puts the secondary axis
+    # 0.12 normalized (0 to 1) coordinates left of the original axis.
+    secax = skew.ax.secondary_yaxis(-0.12,
+                                    functions=(
+                                    lambda p: mpcalc.pressure_to_height_std(units.Quantity(p, 'mbar')).m_as('km'),
+                                    lambda h: mpcalc.height_to_pressure_std(units.Quantity(h, 'km')).m))
+    secax.yaxis.set_major_locator(plt.FixedLocator([0, 1, 3, 6, 9, 12, 15]))
+    secax.yaxis.set_minor_locator(plt.NullLocator())
+    secax.yaxis.set_major_formatter(plt.ScalarFormatter())
+    secax.set_ylabel('Height (km)')
+    """
 
     skew.plot_barbs(sounding['PRES'], sounding['U_WIND'], sounding['V_WIND'])
 
@@ -115,7 +146,7 @@ if __name__ == "__main__":
     lon = 55.7
     lat = 37.6
 
-    text = query_gsd_sounding_data(lon, lat, datetime.datetime(2023, 7, 17, 9, 0, 0))
+    text = query_gsd_sounding_data(lon, lat, datetime.datetime(2023, 7, 18, 9, 0, 0))
     print(text)
 
     sounding, forecast_date = parser.parse(text)

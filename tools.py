@@ -1,8 +1,9 @@
 import datetime
-import os
 from typing import List, Optional
+from metpy.units import units
 
-_epoc = datetime.datetime(1977, 1, 1)
+
+_epoc = datetime.datetime(1970, 1, 1)
 _update_times = [0, 6, 12, 18]
 _forecast_offsets = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24, 36, 48, 60, 72, 84, 96, 108, 120, 144, 168, 192]
 
@@ -41,16 +42,11 @@ def get_forecast_offset(requested_time:datetime.datetime):
 
 
 if __name__ == '__main__':
-    forecast_date = datetime.datetime(2023, 7, 17, 9, 0, 0)
-    print(datetime.datetime.utcnow().hour)
-    print(forecast_date.hour)
-    print(get_forecast_offset(forecast_date))
+    date = datetime.datetime(2023, 7, 18, 9)
+    day = datetime.date(2023, 7, 18)
 
-    str = "GFS         6      16      Jul    2023"
-    cols = str.strip().split()
-    print(cols)
-    datetime_str = f"{cols[4]},{cols[3]},{cols[2]},{cols[1]}"
-    print(datetime_str)
-    datetime_format = "%Y,%b,%d,%H"
-    forecast_date = datetime.datetime.strptime(datetime_str, datetime_format)
-    print(forecast_date)
+    print(seconds_from_epoc(day, 9))
+
+    print(seconds_from_epoc(date.date(), 9))
+    print(seconds_from_epoc(date + datetime.timedelta(hours=1)))
+    print(units.degC)
