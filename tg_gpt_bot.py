@@ -293,10 +293,6 @@ def process_forecast_request(rq, bot, msg):
         bot.reply_to(msg, "сущности не определены")
         return
 
-
-
-
-
 @bot.message_handler(commands=['clear'])
 def send_welcome(message):
     user_id = str(message.from_user.id)
