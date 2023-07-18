@@ -258,6 +258,8 @@ def process_forecast_request(rq, bot, msg):
         model=MAIN_MODEL, messages=messages, temperature=0.2)
     ans = completion['choices'][0]['message']['content']
 
+    _log(f"for NER request. chatgpt ans = {ans} ")
+
     entities = tools.string_to_dict(tools.extract_brackets(ans))
     print(f"entities = {entities}")
 
@@ -266,28 +268,36 @@ def process_forecast_request(rq, bot, msg):
         completion = openai.ChatCompletion.create(
                 model=MAIN_MODEL, messages=messages, temperature=0.2)
         ans = completion['choices'][0]['message']['content']
+        _log(f"for Coord request. chatgpt ans = {ans} ")
         #bot.reply_to(msg, ans)
 
         coord = tools.string_to_dict(tools.extract_brackets(ans))
         print(f"coord = {coord}")
 
-        text = ldr.query_gsd_sounding_data(coord['lat'], coord['lon'], datetime.datetime(2023, 7, 18, 9, 0, 0))
-
-        sounding, forecast_date = parser.parse(text)
-
         forecast_date = datetime.datetime.strptime(entities['day'] + ' 9', '%d %b %Y %H')
 
-        if (forecast_date.date()- datetime.datetime.utcnow().date()) > 5:
+        if (forecast_date.date() - datetime.datetime.utcnow().date()).days > 5:
             bot.reply_to(msg, "прогноз доступен для следующих 5-ти дней. Попробуйте еще раз")
 
         else:
 
+            text = ldr.query_gsd_sounding_data(coord['lat'], coord['lon'], forecast_date)
+
+            _log("got sounding data from noaa. start gsd parsing")
+
+            sounding, forecast_date = parser.parse(text)
+
+            _log("gsd parsing complete. start plotting")
+
             title = f"For lat={coord['lat']}, lon={coord['lon']} on {forecast_date} UTC"
 
-            bytes_array = ldr.get_skew_fig(sounding, title, 300, 'test.png')
+            bytes_array = ldr.get_skew_fig(sounding, title, 300)
 
-            # Отправляем изображение
-            bot.send_photo(msg.chat.id, bytes_array)
+            if bytes_array:
+                # Отправляем изображение
+                bot.send_photo(msg.chat.id, bytes_array)
+            else:
+                bot.reply_to(msg, "не могу построить сейчас аэрологическую диаграмму. Попробуйте позже")
 
     else:
         bot.reply_to(msg, "сущности не определены")
@@ -397,6 +407,7 @@ def process_message(message):
 
             if answer_message:
                 if tools.is_forecast_intent_exist(ans):
+                    _log(f"forecast intent recognized. starting process forecast request")
                     process_forecast_request(rq, bot, message)
                 else:
                     bot.reply_to(message, ans)

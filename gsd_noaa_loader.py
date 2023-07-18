@@ -1,6 +1,9 @@
 import requests
 import gsd_parser as parser
 import pandas as pd
+import matplotlib
+
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from metpy.plots import SkewT
 import numpy as np
@@ -65,13 +68,11 @@ def query_gsd_sounding_data(lat: float, lon: float, day: datetime.datetime, mode
                   'endSecs': tools.seconds_from_epoc(day.date(), day.hour + 1)}
 
     url = 'https://rucsoundings.noaa.gov/get_soundings.cgi'
-    print(day)
-    print(day + datetime.timedelta(hours=1))
-    print(tools.seconds_from_epoc(day))
+    print(f"fetching forecast for forecast_date = {day}")
     text = ""
     try:
         response = requests.get(url, params=parameters)
-        print(response.url)
+        # print(response.url)
         if response.status_code != 200:
             raise Exception('Ошибка при выполнении запроса:', response.status_code)
         else:
@@ -93,6 +94,7 @@ def query_gsd_sounding_data(lat: float, lon: float, day: datetime.datetime, mode
 
 def get_skew_fig(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) -> io.BytesIO:
     fig = plt.figure(figsize=(10, 10))
+    buf = None
     try:
         skew = SkewT(fig)
 
@@ -146,20 +148,25 @@ def get_skew_fig(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) ->
         buf = io.BytesIO()
         fig.savefig(buf, format='png')
         buf.seek(0)
-        return buf.getvalue()
+
     except:
-        plt.close(plt.figure)
-        return None
+        plt.close(fig)
     finally:
-        plt.close(plt.figure)
+        plt.close(fig)
+
+    if buf:
+        return buf.getvalue()
+    else:
         return None
 
 
+"""
 if __name__ == "__main__":
-    lat = 55.7
-    lon = 37.6
+    
+    lat = 54.41
+    lon = 38.1
 
-    text = query_gsd_sounding_data(lat, lon, datetime.datetime(2023, 7, 18, 9, 0, 0))
+    text = query_gsd_sounding_data(lat, lon, datetime.datetime(2023, 7, 19, 9, 0, 0))
     print(text)
 
     sounding, forecast_date = parser.parse(text)
@@ -169,3 +176,4 @@ if __name__ == "__main__":
     title = f"For lon={lon}, lat={lat} on {forecast_date} UTC"
 
     bytes_array = get_skew_fig(sounding, title, 300, 'test.png')
+"""

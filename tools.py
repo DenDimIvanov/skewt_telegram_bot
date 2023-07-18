@@ -2,6 +2,7 @@ import datetime
 from typing import List, Optional
 from metpy.units import units
 import ast
+import requests
 
 
 _epoc = datetime.datetime(1970, 1, 1)
@@ -94,6 +95,27 @@ def string_to_dict(text):
             return None
     except (SyntaxError, ValueError):
         return None
+
+def get_coordinates(city_name, api_key):
+    base_url = "https://maps.googleapis.com/maps/api/geocode/json"
+    params = {
+        "address": city_name,
+        "key": api_key,
+    }
+    response = requests.get(base_url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        if 'results' in data and len(data['results']) > 0:
+            geometry = data['results'][0]['geometry']
+            location = geometry['location']
+            return location['lat'], location['lng']
+    return None
+
+# Пример использования функции
+# city_name = "Moscow"
+# api_key = "ВАШ_КЛЮЧ_API"
+# lat, lng = get_coordinates(city_name, api_key)
+# print(f"Coordinates of {city_name}: {lat}, {lng}")
 
 if __name__ == '__main__':
     print(is_forecast_intent_exist('  dfdfadfljjdf forecast'))

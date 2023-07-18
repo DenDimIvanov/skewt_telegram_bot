@@ -48,9 +48,6 @@ def parse(text: str):
         df['DEWPT'] = df['DEWPT'].apply(lambda x: x / 10)
         df['WINDSD'] = df['WINDSD'].apply(lambda x: _knots_to_ms(x))
 
-        df = df.dropna(subset=('TEMP', 'DEWPT', 'WINDIR', 'WINSD'
-                               ), how='all').reset_index(drop=True)
-
     except Exception as e:
         print(f'Wrong GSD format, caught {type(e)}: e')
     finally:
