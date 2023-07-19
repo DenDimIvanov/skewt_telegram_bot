@@ -274,24 +274,14 @@ def process_forecast_request(rq, bot, msg):
         coord = tools.string_to_dict(tools.extract_brackets(ans))
         print(f"coord = {coord}")
 
-        forecast_date = datetime.datetime.strptime(entities['day'] + ' 9', '%d %b %Y %H')
+        forecast_date = datetime.datetime.strptime(entities['day'] + ' 9', '%d %m %Y %H')
 
         if (forecast_date.date() - datetime.datetime.utcnow().date()).days > 5:
             bot.reply_to(msg, "прогноз доступен для следующих 5-ти дней. Попробуйте еще раз")
 
         else:
 
-            text = ldr.query_gsd_sounding_data(coord['lat'], coord['lon'], forecast_date)
-
-            _log("got sounding data from noaa. start gsd parsing")
-
-            sounding, forecast_date = parser.parse(text)
-
-            _log("gsd parsing complete. start plotting")
-
-            title = f"For lat={coord['lat']}, lon={coord['lon']} on {forecast_date} UTC"
-
-            bytes_array = ldr.get_skew_fig(sounding, title, 300)
+            bytes_array = ldr.get_skewt(coord['lat'], coord['lon'], forecast_date)
 
             if bytes_array:
                 # Отправляем изображение
@@ -319,28 +309,14 @@ def get_code(message):
     bot.reply_to(
         message, f"Для ответа на ваш вопрос я написал следующий код:\n{code}")
 
-@bot.message_handler(commands=['skwet'])
+@bot.message_handler(commands=['skewt'])
 def get_skwet(message):
     lat = 55.7
     lon = 37.6
 
-    text = ldr.query_gsd_sounding_data(lat, lon, datetime.datetime(2023, 7, 18, 9, 0, 0))
-    print(text)
+    bytes_array = ldr.get_skewt(lat, lon, datetime.datetime(2023, 7, 19, 9, 0, 0))
 
-    sounding, forecast_date = parser.parse(text)
-    print(sounding)
-    print(forecast_date)
-
-    title = f"For lon={lat}, lat={lon} on {forecast_date} UTC"
-
-    fig = ldr.get_skew_fig(sounding, title, 300, 'test.png')
-
-    buf = BytesIO()
-    fig.savefig(buf, format='png')
-    buf.seek(0)
-
-    # Отправляем изображение
-    bot.send_photo(message.chat.id, buf)
+    bot.send_photo(message.chat.id, bytes_array)
 
 
 def _is_addressed_to_bot(msg: str) -> bool:

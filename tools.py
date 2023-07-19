@@ -55,7 +55,7 @@ def prepare_entity_messages(rq:str):
     entity_system_promt += datetime.datetime.utcnow().date().strftime('%d %b %Y')
     entity_system_promt += """ Если не определена сущность, выдай соответствующее сообщение.
     Если сущности Город и Дата определены, то верни структуру {'city': town, 'day': date}.
-    где town - значение сущности Город. date - значение сущности Дата в формате %d %b %Y"""
+    где town - значение сущности Город. date - значение сущности Дата в формате %d %m %Y"""
     entity_sys_role = {"role": "system", "content": entity_system_promt}
 
     entity_user_content = 'извлеки сущности Город и Дата из сообщения: ' + rq
@@ -67,8 +67,9 @@ def prepare_entity_messages(rq:str):
 
 def prepare_coord_messages(city:str):
     coord_system_promt = """Ты определяешь по названию Города координаты: широту (latitude) и долготу (longitude).
-                            Возвращаешь структуру {'lon': longitude, 'lat': latitude}
-                            Если город называется Кончинка, то latitude = 54.41, longitude = 38.1"""
+                            Если город называется Кончинка, то latitude = 54.41, longitude = 38.1 Ответ всегда
+                            возвращаешь в виде структуры: {'lon': longitude, 'lat': latitude} и больше ничего 
+                            возвращать не надо"""
 
     coord_sys_role = {"role": "system", "content": coord_system_promt}
 

@@ -72,7 +72,7 @@ def query_gsd_sounding_data(lat: float, lon: float, day: datetime.datetime, mode
     text = ""
     try:
         response = requests.get(url, params=parameters)
-        # print(response.url)
+        print(response.url)
         if response.status_code != 200:
             raise Exception('Ошибка при выполнении запроса:', response.status_code)
         else:
@@ -158,6 +158,23 @@ def get_skew_fig(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) ->
         return buf.getvalue()
     else:
         return None
+
+
+def get_skewt(lat: float, lon: float, forecast_date: datetime.datetime, file_name=None):
+    text = query_gsd_sounding_data(lat, lon, forecast_date)
+
+    print("got sounding data from noaa. start gsd parsing")
+
+    print(text)
+
+    sounding, forecast_date = parser.parse(text)
+
+    print("gsd parsing complete. start plotting")
+
+    title = f"For lat={lat}, lon={lon} on {forecast_date} UTC"
+
+    bytes_array = get_skew_fig(sounding, title, 300, file_name)
+    return bytes_array
 
 
 """
