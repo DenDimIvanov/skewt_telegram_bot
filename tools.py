@@ -118,6 +118,14 @@ def get_coordinates(city_name, api_key):
 # lat, lng = get_coordinates(city_name, api_key)
 # print(f"Coordinates of {city_name}: {lat}, {lng}")
 
+
+def gradient_to_color(temp_grad: List[float]) -> List[str]:
+    colors = []
+    for grad*100 in temp_grad:
+        if grad <= 1.1:
+            colors[]
+    pass
+
 if __name__ == '__main__':
     print(is_forecast_intent_exist('  dfdfadfljjdf forecast'))
     print(is_forecast_intent_exist("{'intent': 'forecast'}"))

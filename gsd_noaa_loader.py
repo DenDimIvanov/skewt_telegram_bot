@@ -96,7 +96,8 @@ def get_skew_fig(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) ->
     fig = plt.figure(figsize=(10, 10))
     buf = None
     try:
-        skew = SkewT(fig)
+        skew = SkewT(fig, rotation=45)
+        # skew.ax.set_yscale('linear')
 
         skew.plot(sounding['PRES'], sounding['TEMP'], color='tab:red')
         skew.plot(sounding['PRES'], sounding['DEWPT'], color='tab:green')
@@ -177,20 +178,86 @@ def get_skewt(lat: float, lon: float, forecast_date: datetime.datetime, file_nam
     return bytes_array
 
 
-"""
+def get_skew_fig_new(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) -> io.BytesIO:
+    fig = plt.figure(figsize=(10, 10))
+    buf = None
+    try:
+        skew = SkewT(fig, rotation=45)
+
+
+        skew.plot(sounding['PRES'], sounding['TEMP'], color='tab:red')
+        skew.plot(sounding['PRES'], sounding['DEWPT'], color='tab:green')
+
+        skew.ax.set_ylim(1000, 50)
+        skew.ax.set_xlim(-50, 30)
+
+        plt.xlabel('T, Grad Celcius')
+        plt.ylabel('Pressure, hPa, m')
+
+        plt.title(title)
+
+        sounding['U_WIND'], sounding['V_WIND'] = get_wind_components(sounding['WINDSD'],
+                                                                     np.deg2rad(sounding['WINDDIR']))
+        skew.plot_barbs(sounding['PRES'], sounding['U_WIND'], sounding['V_WIND'])
+
+        for p, w, h in zip(sounding['PRES'], sounding['WINDSD'], sounding['HGHT']):
+            if p >= 100:
+                print(f"p={p}  w={w}  h={h}")
+                skew.ax.text(1.03, p, round(w, 1), transform=skew.ax.get_yaxis_transform(which='tick2'))
+                skew.ax.text(0.01, p, round(h, 0), transform=skew.ax.get_yaxis_transform(which='tick2'))
+
+        # Add dry adiabats
+        skew.plot_dry_adiabats()
+
+        # Add moist adiabats
+        skew.plot_moist_adiabats()
+
+        # Add mixing ratio lines
+        skew.plot_mixing_lines()
+
+
+        #temp gradient
+        df_sounding['D_T'] = df_sounding['TEMP'].diff().fillna(0)
+        df_sounding['D_H'] = df_sounding['HGHT'].diff().fillna(0)
+        df_sounding['GRADT'] = (df_sounding['D_T'] / df_sounding['D_H']).fillna(0)
+
+
+
+        if file_name:
+            fig.savefig(file_name, dpi=dpi)
+
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png')
+        buf.seek(0)
+
+    except:
+        plt.close(fig)
+    finally:
+        plt.close(fig)
+
+    if buf:
+        return buf.getvalue()
+    else:
+        return None
+
+
 if __name__ == "__main__":
-    
+    """
     lat = 54.41
     lon = 38.1
+    date = datetime.datetime(2023, 8, 8, 9, 0, 0)
+    text_forecast_data = query_gsd_sounding_data(lat, lon, date)
+    df_sounding, dt_forecast_date = parser.parse(text_forecast_data)
+    df_sounding.to_csv('df.sounding_test_data.csv')
+    """
 
-    text = query_gsd_sounding_data(lat, lon, datetime.datetime(2023, 7, 19, 9, 0, 0))
-    print(text)
+    df_sounding = pd.read_csv('df.sounding_test_data.csv')
+    df_sounding['D_T'] = df_sounding['TEMP'].diff().fillna(0)
+    df_sounding['D_H'] = df_sounding['HGHT'].diff().fillna(0)
+    df_sounding['GRADT'] = (df_sounding['D_T'] / df_sounding['D_H']).fillna(0)
 
-    sounding, forecast_date = parser.parse(text)
-    print(sounding)
-    print(forecast_date)
 
-    title = f"For lon={lon}, lat={lat} on {forecast_date} UTC"
+    print(df_sounding)
+    #get_skew_fig_new(df_sounding, 'test ', 300, 'test.png')
 
-    bytes_array = get_skew_fig(sounding, title, 300, 'test.png')
-"""
+    # get_skewt(lat, lon, datetime.datetime(2023, 7, 19, 9, 0, 0), 'test.png')
