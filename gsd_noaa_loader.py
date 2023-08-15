@@ -170,6 +170,7 @@ def get_skewt(lat: float, lon: float, forecast_date: datetime.datetime, file_nam
 
     sounding, forecast_date = parser.parse(text)
 
+
     print("gsd parsing complete. start plotting")
 
     title = f"For lat={lat}, lon={lon} on {forecast_date} UTC"
