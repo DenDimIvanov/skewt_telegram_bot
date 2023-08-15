@@ -252,46 +252,52 @@ def _process_rq(user_id, rq, deep=0, chat_id=None, username=None):
 
 def process_forecast_request(rq, bot, msg):
 
-    messages = tools.prepare_entity_messages(rq)
+    try:
 
-    completion = openai.ChatCompletion.create(
-        model=MAIN_MODEL, messages=messages, temperature=0.2)
-    ans = completion['choices'][0]['message']['content']
+        messages = tools.prepare_entity_messages(rq)
 
-    _log(f"for NER request. chatgpt ans = {ans} ")
-
-    entities = tools.string_to_dict(tools.extract_brackets(ans))
-    print(f"entities = {entities}")
-
-    if entities:
-        messages = tools.prepare_coord_messages(entities['city'])
         completion = openai.ChatCompletion.create(
-                model=MAIN_MODEL, messages=messages, temperature=0.2)
+            model=MAIN_MODEL, messages=messages, temperature=0.2)
         ans = completion['choices'][0]['message']['content']
-        _log(f"for Coord request. chatgpt ans = {ans} ")
-        #bot.reply_to(msg, ans)
 
-        coord = tools.string_to_dict(tools.extract_brackets(ans))
-        print(f"coord = {coord}")
+        _log(f"for NER request. chatgpt ans = {ans} ")
 
-        forecast_date = datetime.datetime.strptime(entities['day'] + ' 9', '%d %m %Y %H')
+        entities = tools.string_to_dict(tools.extract_brackets(ans))
+        print(f"entities = {entities}")
 
-        if (forecast_date.date() - datetime.datetime.utcnow().date()).days > 5:
-            bot.reply_to(msg, "прогноз доступен для следующих 5-ти дней. Попробуйте еще раз")
+        if entities:
+            messages = tools.prepare_coord_messages(entities['city'])
+            completion = openai.ChatCompletion.create(
+                    model=MAIN_MODEL, messages=messages, temperature=0.2)
+            ans = completion['choices'][0]['message']['content']
+            _log(f"for Coord request. chatgpt ans = {ans} ")
+            #bot.reply_to(msg, ans)
+
+            coord = tools.string_to_dict(tools.extract_brackets(ans))
+            print(f"coord = {coord}")
+
+            forecast_date = datetime.datetime.strptime(entities['day'] + ' 9', '%d %m %Y %H')
+
+            if (forecast_date.date() - datetime.datetime.utcnow().date()).days > 5:
+                bot.reply_to(msg, "прогноз доступен для следующих 5-ти дней. Попробуйте еще раз")
+
+            else:
+
+                bytes_array = ldr.get_skewt(coord['lat'], coord['lon'], forecast_date)
+
+                if bytes_array:
+                    # Отправляем изображение
+                    bot.send_photo(msg.chat.id, bytes_array)
+                else:
+                    bot.reply_to(msg, "не могу построить сейчас аэрологическую диаграмму. Попробуйте позже")
 
         else:
+            bot.reply_to(msg, "сущности не определены")
+    except Exception as e:
+        print(e)
+        bot.reply_to(msg,"Возникла ошибка, попробуйте позже")
 
-            bytes_array = ldr.get_skewt(coord['lat'], coord['lon'], forecast_date)
 
-            if bytes_array:
-                # Отправляем изображение
-                bot.send_photo(msg.chat.id, bytes_array)
-            else:
-                bot.reply_to(msg, "не могу построить сейчас аэрологическую диаграмму. Попробуйте позже")
-
-    else:
-        bot.reply_to(msg, "сущности не определены")
-        return
 
 @bot.message_handler(commands=['clear'])
 def send_welcome(message):

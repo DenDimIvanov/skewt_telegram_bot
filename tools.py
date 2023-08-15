@@ -55,7 +55,8 @@ def prepare_entity_messages(rq:str):
     entity_system_promt += datetime.datetime.utcnow().date().strftime('%d %b %Y')
     entity_system_promt += """ Если не определена сущность, выдай соответствующее сообщение.
     Если сущности Город и Дата определены, то верни структуру {'city': town, 'day': date}.
-    где town - значение сущности Город. date - значение сущности Дата в формате %d %m %Y"""
+    где town - значение сущности Город. date - значение сущности Дата в формате: %d %m %Y языка python, например
+    19 08 2023"""
     entity_sys_role = {"role": "system", "content": entity_system_promt}
 
     entity_user_content = 'извлеки сущности Город и Дата из сообщения: ' + rq

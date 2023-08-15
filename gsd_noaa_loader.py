@@ -45,9 +45,9 @@ for details see https://rucsoundings.noaa.gov/text_sounding_query_parameters.pdf
 
 def query_gsd_sounding_data(lat: float, lon: float, day: datetime.datetime, model='GFS') -> str:
     # verify lon and lat parameters
-    if not (lon > -90 and lon < 90):
+    if not (lat > -90 and lat < 90):
         raise Exception("invalid longitute")
-    if not (lat > -180 and lat < 180):
+    if not (lon > -180 and lon < 180):
         raise Exception("invalid latitute")
 
     # verify day parameter
@@ -90,96 +90,7 @@ def query_gsd_sounding_data(lat: float, lon: float, day: datetime.datetime, mode
     sounding should have columns: PRES   HGHT  TEMP   DEWPT  WINDDIR     WINDSD
     return array of Bytes
 """
-
-
 def get_skew_fig(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) -> io.BytesIO:
-    fig = plt.figure(figsize=(10, 10))
-    buf = None
-    try:
-        skew = SkewT(fig, rotation=45)
-        # skew.ax.set_yscale('linear')
-
-        skew.plot(sounding['PRES'], sounding['TEMP'], color='tab:red')
-        skew.plot(sounding['PRES'], sounding['DEWPT'], color='tab:green')
-
-        skew.ax.set_ylim(1050, 100)
-        skew.ax.set_xlim(-50, 30)
-
-        plt.xlabel('T, Grad Celcius')
-        plt.ylabel('Pressure, hPa')
-        plt.title(title)
-
-        sounding['U_WIND'], sounding['V_WIND'] = get_wind_components(sounding['WINDSD'],
-                                                                     np.deg2rad(sounding['WINDDIR']))
-        """
-        p = sounding['PRES'].values * units.hPa
-        T = sounding['TEMP'].values * units.degC
-        Td = sounding['DEWPT'].values * units.degC
-        wind_speed = sounding['WINDSD'] * (units.meter/units.second)
-        wind_dir = sounding['WINDDIR'].values * units.degrees
-        u, v = mpcalc.wind_components(wind_speed, wind_dir)
-    
-        # Add a secondary axis that automatically converts between pressure and height
-        # assuming a standard atmosphere. The value of -0.12 puts the secondary axis
-        # 0.12 normalized (0 to 1) coordinates left of the original axis.
-        secax = skew.ax.secondary_yaxis(-0.12,
-                                        functions=(
-                                        lambda p: mpcalc.pressure_to_height_std(units.Quantity(p, 'mbar')).m_as('km'),
-                                        lambda h: mpcalc.height_to_pressure_std(units.Quantity(h, 'km')).m))
-        secax.yaxis.set_major_locator(plt.FixedLocator([0, 1, 3, 6, 9, 12, 15]))
-        secax.yaxis.set_minor_locator(plt.NullLocator())
-        secax.yaxis.set_major_formatter(plt.ScalarFormatter())
-        secax.set_ylabel('Height (km)')
-        """
-
-        skew.plot_barbs(sounding['PRES'], sounding['U_WIND'], sounding['V_WIND'])
-
-        # Add dry adiabats
-        skew.plot_dry_adiabats()
-
-        # Add moist adiabats
-        skew.plot_moist_adiabats()
-
-        # Add mixing ratio lines
-        skew.plot_mixing_lines()
-
-        if file_name:
-            fig.savefig(file_name, dpi=dpi)
-
-        buf = io.BytesIO()
-        fig.savefig(buf, format='png')
-        buf.seek(0)
-
-    except:
-        plt.close(fig)
-    finally:
-        plt.close(fig)
-
-    if buf:
-        return buf.getvalue()
-    else:
-        return None
-
-
-def get_skewt(lat: float, lon: float, forecast_date: datetime.datetime, file_name=None):
-    text = query_gsd_sounding_data(lat, lon, forecast_date)
-
-    print("got sounding data from noaa. start gsd parsing")
-
-    print(text)
-
-    sounding, forecast_date = parser.parse(text)
-
-
-    print("gsd parsing complete. start plotting")
-
-    title = f"For lat={lat}, lon={lon} on {forecast_date} UTC"
-
-    bytes_array = get_skew_fig(sounding, title, 300, file_name)
-    return bytes_array
-
-
-def get_skew_fig_new(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) -> io.BytesIO:
     fig = plt.figure(figsize=(10, 10))
     buf = None
     try:
@@ -218,9 +129,9 @@ def get_skew_fig_new(sounding: pd.DataFrame, title: str, dpi=300, file_name=None
 
 
         #temp gradient
-        df_sounding['D_T'] = df_sounding['TEMP'].diff().fillna(0)
-        df_sounding['D_H'] = df_sounding['HGHT'].diff().fillna(0)
-        df_sounding['GRADT'] = (df_sounding['D_T'] / df_sounding['D_H']).fillna(0)
+        sounding['D_T'] = sounding['TEMP'].diff().fillna(0)
+        sounding['D_H'] = sounding['HGHT'].diff().fillna(0)
+        sounding['GRADT'] = (sounding['D_T'] / sounding['D_H']).fillna(0)
 
 
 
@@ -231,8 +142,8 @@ def get_skew_fig_new(sounding: pd.DataFrame, title: str, dpi=300, file_name=None
         fig.savefig(buf, format='png')
         buf.seek(0)
 
-    except:
-        plt.close(fig)
+    except Exception as e:
+        print(e)
     finally:
         plt.close(fig)
 
@@ -240,6 +151,25 @@ def get_skew_fig_new(sounding: pd.DataFrame, title: str, dpi=300, file_name=None
         return buf.getvalue()
     else:
         return None
+
+def get_skewt(lat: float, lon: float, forecast_date: datetime.datetime, file_name=None):
+    text = query_gsd_sounding_data(lat, lon, forecast_date)
+
+    print("got sounding data from noaa. start gsd parsing")
+
+    print(text)
+
+    sounding, forecast_date = parser.parse(text)
+
+
+    print("gsd parsing complete. start plotting")
+
+    title = f"For lat={lat}, lon={lon} on {forecast_date} UTC"
+
+    bytes_array = get_skew_fig(sounding, title, 300, file_name)
+    return bytes_array
+
+
 
 
 if __name__ == "__main__":
