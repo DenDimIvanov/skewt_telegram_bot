@@ -110,7 +110,7 @@ def _get_clear_history(user_id, username, chat_id=None):
         Если просят придумать шутку, то отвечай как артист и можешь использовать весь арсенал своих саркастических способностей. Если просят ответить на технический вопрос по аэродинамике, физике, метеорилогии, программированию, то отвечай как эксперт в данной области.
         """
 
-    prompt += """ Если тебя спрашивают про прогноз погоды (какая погода где-то), то ответь: {'intent': 'forecast'} и больше ничего возвращать не надо.
+    prompt += """ Когда спрашивают про прогноз погоды (например, какая погода или какой прогноз), то ты всегда отвечаешь структурой: {'intent': 'forecast'} и больше ничего возвращать не надо.
     """
 
 
@@ -266,7 +266,7 @@ def process_forecast_request(rq, bot, msg):
         print(f"entities = {entities}")
 
         if entities:
-            messages = tools.prepare_coord_messages(entities['city'])
+            messages = tools.prepare_coord_messages(entities['place'])
             completion = openai.ChatCompletion.create(
                     model=MAIN_MODEL, messages=messages, temperature=0.2)
             ans = completion['choices'][0]['message']['content']
@@ -275,6 +275,10 @@ def process_forecast_request(rq, bot, msg):
 
             coord = tools.string_to_dict(tools.extract_brackets(ans))
             print(f"coord = {coord}")
+
+            if not coord:
+                bot.reply_to(msg, "координаты места не известны, попробуйте уточнить место")
+                return
 
             forecast_date = datetime.datetime.strptime(entities['day'] + ' 9', '%d %m %Y %H')
 
@@ -292,7 +296,7 @@ def process_forecast_request(rq, bot, msg):
                     bot.reply_to(msg, "не могу построить сейчас аэрологическую диаграмму. Попробуйте позже")
 
         else:
-            bot.reply_to(msg, "сущности не определены")
+            bot.reply_to(msg, "уточните дату и место")
     except Exception as e:
         print(e)
         bot.reply_to(msg,"Возникла ошибка, попробуйте позже")

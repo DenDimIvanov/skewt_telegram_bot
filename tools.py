@@ -50,31 +50,33 @@ def is_forecast_intent_exist(s:str)->bool:
 
 def prepare_entity_messages(rq:str):
 
-    entity_system_promt = """Ты извлекаешь сущности Город и Дата из заданной строки.  
-     Значение Даты можно рассчитать используя текущую дату: """
-    entity_system_promt += datetime.datetime.utcnow().date().strftime('%d %b %Y')
-    entity_system_promt += """ Если не определена сущность, выдай соответствующее сообщение.
-    Если сущности Город и Дата определены, то верни структуру {'city': town, 'day': date}.
-    где town - значение сущности Город. date - значение сущности Дата в формате: %d %m %Y языка python, например
-    19 08 2023"""
+    entity_system_promt = """Ты извлекаешь сущности Место и Дата из заданной строки.
+    Ответ возвращаешь всегда в виде структуры {'place': place_value, 'day': date}.
+    где place_value - значение сущности Место. date - значение сущности Дата в формате: %d %m %Y языка python, например
+    19 08 2023. Если сущность не найдена, то значение сущности = None.
+    Значение Даты можно рассчитать используя текущую дату: """
+    entity_system_promt += datetime.datetime.utcnow().date().strftime('%d %m %Y')
+
+
     entity_sys_role = {"role": "system", "content": entity_system_promt}
 
-    entity_user_content = 'извлеки сущности Город и Дата из сообщения: ' + rq
+    entity_user_content = 'извлеки сущности Место и Дата из сообщения: ' + rq
 
     entity_user_role = {"role": "user", "content": entity_user_content}
 
     return [entity_sys_role, entity_user_role]
 
 
-def prepare_coord_messages(city:str):
-    coord_system_promt = """Ты определяешь по названию Города координаты: широту (latitude) и долготу (longitude).
-                            Если город называется Кончинка, то latitude = 54.41, longitude = 38.1 Ответ всегда
-                            возвращаешь в виде структуры: {'lon': longitude, 'lat': latitude} и больше ничего 
-                            возвращать не надо"""
+def prepare_coord_messages(place: str):
+    coord_system_promt = """Ты сервис, который по названию Места определяет координаты: широту (latitude) и долготу (longitude).
+                            Ответ всегда возвращаешь в виде структуры: {'lon': longitude, 'lat': latitude} и больше ничего 
+                            возвращать не надо. Например, тебя спрашивают какие координаты (широта и долгота) для места:
+                            Узынагаш Алматинской области. Ты вернешь структуру {'lon': 77.2892, 'lat': 43.8355}
+                            Если место называется "Кончинка", то latitude = 54.41, longitude = 38.1"""
 
     coord_sys_role = {"role": "system", "content": coord_system_promt}
 
-    coord_user_content = 'какие координаты для: ' + city
+    coord_user_content = f'какие координаты (широта и долгота) для места: {place}'
 
     coord_user_role = {"role": "user", "content": coord_user_content}
 

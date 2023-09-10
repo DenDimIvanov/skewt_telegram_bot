@@ -100,6 +100,8 @@ def get_skew_fig(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) ->
         skew.plot(sounding['PRES'], sounding['TEMP'], color='tab:red')
         skew.plot(sounding['PRES'], sounding['DEWPT'], color='tab:green')
 
+        #skew.ax.set_yscale('linear')
+
         skew.ax.set_ylim(1000, 50)
         skew.ax.set_xlim(-50, 30)
 
@@ -176,7 +178,7 @@ if __name__ == "__main__":
     """
     lat = 54.41
     lon = 38.1
-    date = datetime.datetime(2023, 8, 8, 9, 0, 0)
+    date = datetime.datetime(2023, 8, 16, 9, 0, 0)
     text_forecast_data = query_gsd_sounding_data(lat, lon, date)
     df_sounding, dt_forecast_date = parser.parse(text_forecast_data)
     df_sounding.to_csv('df.sounding_test_data.csv')
@@ -189,6 +191,6 @@ if __name__ == "__main__":
 
 
     print(df_sounding)
-    #get_skew_fig_new(df_sounding, 'test ', 300, 'test.png')
+    get_skew_fig(df_sounding, 'test ', 300, 'test.png')
 
     # get_skewt(lat, lon, datetime.datetime(2023, 7, 19, 9, 0, 0), 'test.png')
