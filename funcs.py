@@ -10,6 +10,7 @@ from langchain.tools import tool
 
 llm = ChatOpenAI(model="gpt-3.5-turbo")
 
+#база данных телефонов
 stuff_database = [
     {"name": "iPhone 8 mini", "price": 300, "memory": 128, "ram": 8, "camera": 12, "description": "Самая дешевая модель iPhone"},
     {"name": "iPhone 14", "price": 1000, "memory": 128, "ram": 8, "camera": 12, "description": "Телефон будущего, уже сегодня!"},
