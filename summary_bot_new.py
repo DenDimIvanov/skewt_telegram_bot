@@ -20,7 +20,7 @@ from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chains import RetrievalQA
 from langchain.chains.summarize import load_summarize_chain
 from langchain.chat_models.gigachat import GigaChat
-from langchain.chat_models.openai import ChatOpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import WebBaseLoader, WikipediaLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.prompts import PromptTemplate
@@ -89,14 +89,18 @@ class LoggingGigaChat(GigaChat):
 
         return resp
 
-
+"""
 giga = LoggingGigaChat(
     profanity=False,
     verbose=True,
     user="ddmitivanov",
-    password="bKIpW9DaKyRy",
+    password="bKlpW9DaKyRy",
 )
-# giga = ChatOpenAI(model="gpt-4", temperature=0.4)
+"""
+
+giga = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.4)
+#giga = ChatOpenAI(model="gpt-4", temperature=0.4)
+
 
 embeddings = OpenAIEmbeddings()
 
@@ -123,7 +127,7 @@ def summarize(url, user_id, message=None):
     docs = []
     chain = None
     splitted_docs = []
-    splitter = CharacterTextSplitter(chunk_size=4000, chunk_overlap=200)
+    splitter = CharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
     splitter_mini = CharacterTextSplitter(chunk_size=500, chunk_overlap=0)
     if ".wikipedia.org/" in url:
         title = extract_wikipedia_article_title(url)
