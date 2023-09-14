@@ -11,6 +11,7 @@ from io import StringIO, BytesIO
 import openai
 import telebot
 import tiktoken
+import summary_bot_new as sb
 
 import gsd_noaa_loader as ldr
 import gsd_parser as parser
@@ -340,6 +341,53 @@ def _is_addressed_to_bot(msg: str) -> bool:
     return first_word.lower() in mynames
 
 
+def summarization_from_message(tg_bot, message):
+    try:
+        if message.content_type == "text":
+            text = message.text
+            links = sb._extract_links(text)
+            user_id = str(message.from_user.id)
+            if len(links) > 0:
+                bot_mess = bot.send_message(
+                    message.chat.id,
+                    "Суммаризация...",
+                )
+                res = sb.summarize(links[0], user_id, message=message) + "\n\nВы можете задать мне дополнительные вопросы по статье."
+                tg_bot.send_message(message.chat.id, res)
+                # bot.edit_message_text(
+                #     f"Summary:\n\n{res}", message.chat.id, bot_mess.message_id
+                # )
+            else:
+                if user_id in sb.memory and "chunks" in sb.memory[user_id]:
+                    chunks_mini = sb.memory[user_id]["chunks_mini"]
+                    if "docsearch" not in sb.memory[user_id]:
+                        docsearch = sb.FAISS.from_documents(chunks_mini, sb.embeddings)
+                        sb.memory[user_id]["docsearch"] = docsearch
+                    bot_mess = bot.send_message(message.chat.id, "Готовлю ответ...")
+                    qa = sb.RetrievalQA.from_chain_type(
+                        sb.giga,
+                        chain_type="stuff",
+                        retriever=sb.memory[user_id]["docsearch"].as_retriever(),
+                    )
+                    metadata = {
+                        "user_id": user_id,
+                        "session_id": sb.memory[user_id]["session_id"],
+                        "url": "",
+                    }
+                    ans = qa.run(message.text, metadata=metadata)
+                    bot.send_message(message.chat.id, ans)
+                else:
+                    tg_bot.send_message(
+                        message.chat.id,
+                        "Пришлите мне ссылку на статью, которую нуно суммаризировать.",
+                    )
+
+    except Exception as ex:
+        print(f"!!! Error: {ex}")
+        traceback.print_exc()
+        tg_bot.send_message(message.chat.id, f"Пошу прощения, произошла ошибка: {ex}")
+
+
 @bot.message_handler(func=lambda message: True)
 def process_message(message):
     try:
@@ -380,28 +428,34 @@ def process_message(message):
         else:
             return
 
-        if len(rq) > 0:
-            # if 'покажи код' in rq.lower():
-            #     get_code(message)
-            #     return
-
+        if len(rq) > 0 and answer_message:
             username = str(message.from_user.username)
-            ans = _process_rq(user_id, rq, deep=0,
-                              chat_id=chat_id, username=username)
-            if ans == None or ans == "":
-                return
 
-            if answer_message:
+            links = sb._extract_links(message.text)
+
+
+            # если суммаризация
+            if len(links) >0:
+                summarization_from_message(bot, message)
+            # что-то другое
+            else:
+
+                ans = _process_rq(user_id, rq, deep=0,
+                                  chat_id=chat_id, username=username)
+                if ans is None or ans == "":
+                    return
+
+                # если запрос погоды
                 if tools.is_forecast_intent_exist(ans):
-                    _log(f"forecast intent recognized. starting process forecast request")
+                    _log(f"forecast intent recognized. starting prcess forecast request")
                     process_forecast_request(rq, bot, message)
                 else:
                     bot.reply_to(message, ans)
-            else:
-                bot.send_message(message.chat.id, ans)
+        else:
+            bot.send_message(message.chat.id, ans)
             # Save users using utf-8 and beatur format
-            with open("users.json", "w") as f:
-                json.dump(users, f, indent=4, ensure_ascii=False)
+        with open("users.json", "w") as f:
+            json.dump(users, f, indent=4, ensure_ascii=False)
     except Exception as e:
         _log(f"!!! Error: {e}", e)
 

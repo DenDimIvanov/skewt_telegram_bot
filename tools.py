@@ -126,6 +126,7 @@ def gradient_to_color(temp_grad: List[float]) -> List[str]:
 
     pass
 
+
 if __name__ == '__main__':
     print(is_forecast_intent_exist('  dfdfadfljjdf forecast'))
     print(is_forecast_intent_exist("{'intent': 'forecast'}"))
