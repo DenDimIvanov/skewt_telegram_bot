@@ -27,6 +27,7 @@ from langchain.prompts import PromptTemplate
 from langchain.schema.messages import BaseMessage
 from langchain.schema.output import LLMResult
 from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 # from langchain.vectorstores import Chroma
 from langchain.vectorstores import FAISS
 from trafilatura.settings import use_config
@@ -89,16 +90,16 @@ class LoggingGigaChat(GigaChat):
 
         return resp
 
-"""
+
 giga = LoggingGigaChat(
     profanity=False,
     verbose=True,
     user="ddmitivanov",
     password="bKlpW9DaKyRy",
 )
-"""
 
-giga = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.4)
+
+#giga = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.4)
 #giga = ChatOpenAI(model="gpt-4", temperature=0.4)
 
 
@@ -127,7 +128,7 @@ def summarize(url, user_id, message=None):
     docs = []
     chain = None
     splitted_docs = []
-    splitter = CharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=8000, chunk_overlap=200)
     splitter_mini = CharacterTextSplitter(chunk_size=500, chunk_overlap=0)
     if ".wikipedia.org/" in url:
         title = extract_wikipedia_article_title(url)
