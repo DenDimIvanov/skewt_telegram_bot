@@ -32,7 +32,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 from trafilatura.settings import use_config
 
-#import tg_tools
+# import tg_tools
 
 bot = telebot.TeleBot(os.getenv("TG_TOKEN"))  # Prod
 # os.environ["OPENAI_API_KEY"]
@@ -55,7 +55,7 @@ class LoggingGigaChat(GigaChat):
         super().__init__(*args, **kwargs)
 
     def _log_requests(
-        self, request, response, model_name, user_id, session_id="", url=""
+            self, request, response, model_name, user_id, session_id="", url=""
     ):
         with open("log.jsonl", "a", encoding="utf-8") as f:
             data = {
@@ -70,11 +70,11 @@ class LoggingGigaChat(GigaChat):
             f.write(json.dumps(data, ensure_ascii=False) + "\n")
 
     def _call(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> str:
         message_dicts = [self.convert_message_to_dict(m) for m in messages]
         # Call parent method
@@ -98,9 +98,8 @@ giga = LoggingGigaChat(
     password="bKlpW9DaKyRy",
 )
 
-
-#giga = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.4)
-#giga = ChatOpenAI(model="gpt-4", temperature=0.4)
+# giga = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.4)
+# giga = ChatOpenAI(model="gpt-4", temperature=0.4)
 
 
 embeddings = OpenAIEmbeddings()
@@ -208,7 +207,8 @@ def process_message(message):
                     message.chat.id,
                     "Суммаризация...",
                 )
-                res = summarize(links[0], user_id, message=message) + "\n\nВы можете задать мне дополнительные вопросы по статье."
+                res = summarize(links[0], user_id,
+                                message=message) + "\n\nВы можете задать мне дополнительные вопросы по статье."
                 bot.send_message(message.chat.id, res)
                 # bot.edit_message_text(
                 #     f"Summary:\n\n{res}", message.chat.id, bot_mess.message_id
@@ -235,7 +235,7 @@ def process_message(message):
                 else:
                     bot.send_message(
                         message.chat.id,
-                        "Пришлите мне ссылку на статью, которую нуно суммаризировать.",
+                        "Пришлите мне ссылку на статью, которую нужно суммаризировать.",
                     )
 
     except Exception as ex:
