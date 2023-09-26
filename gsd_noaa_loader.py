@@ -10,6 +10,7 @@ import numpy as np
 import datetime
 import tools
 import io
+from matplotlib.ticker import MultipleLocator
 
 _models = ['GFS', 'NAM', 'Op40']
 
@@ -96,14 +97,17 @@ def get_skew_fig(sounding: pd.DataFrame, title: str, dpi=300, file_name=None) ->
     try:
         skew = SkewT(fig, rotation=45)
 
+        #skew.ax.set_yscale('linear')
+
+        skew.ax.yaxis.set_major_locator(MultipleLocator((sounding['PRES'].max()-sounding['PRES'].min()//10)))
 
         skew.plot(sounding['PRES'], sounding['TEMP'], color='tab:red')
         skew.plot(sounding['PRES'], sounding['DEWPT'], color='tab:green')
 
         #skew.ax.set_yscale('linear')
 
-        skew.ax.set_ylim(1000, 50)
-        skew.ax.set_xlim(-50, 30)
+        skew.ax.set_ylim(1000, sounding['PRES'].min() + 50)
+        skew.ax.set_xlim(sounding['TEMP'].min()-10, sounding['TEMP'].max()+10)
 
         plt.xlabel('T, Grad Celcius')
         plt.ylabel('Pressure, hPa, m')
@@ -185,12 +189,15 @@ if __name__ == "__main__":
     """
 
     df_sounding = pd.read_csv('df.sounding_test_data.csv')
+    """
     df_sounding['D_T'] = df_sounding['TEMP'].diff().fillna(0)
     df_sounding['D_H'] = df_sounding['HGHT'].diff().fillna(0)
     df_sounding['GRADT'] = (df_sounding['D_T'] / df_sounding['D_H']).fillna(0)
-
+    """
 
     print(df_sounding)
-    get_skew_fig(df_sounding, 'test ', 300, 'test.png')
+
+    get_skew_fig    (df_sounding[(df_sounding['PRES']>=600)], 'test ', 300, 'test.png')
+    #get_skew_fig(df_sounding, 'test ', 300, 'test.png')
 
     # get_skewt(lat, lon, datetime.datetime(2023, 7, 19, 9, 0, 0), 'test.png')
