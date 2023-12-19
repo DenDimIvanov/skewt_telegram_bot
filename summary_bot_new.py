@@ -95,7 +95,7 @@ giga = LoggingGigaChat(
     profanity=False,
     verbose=True,
     user="ddmitivanov",
-    password="bKlpW9DaKyRy",
+    password="",
 )
 
 # giga = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.4)
